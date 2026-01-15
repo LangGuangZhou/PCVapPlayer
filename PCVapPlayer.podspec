@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'PCVapPlayer'
-  s.version          = '1.0.1'
+  s.version          = '1.0.2'
   s.summary          = 'PCVapPlayer is a high-performance video animation player library for iOS, written in Swift.'
   s.description      = <<-DESC
 PCVapPlayer is a Swift-based video animation player library that supports hardware-accelerated video playback with alpha channel support. It uses Metal for rendering and provides a modern Swift API.
