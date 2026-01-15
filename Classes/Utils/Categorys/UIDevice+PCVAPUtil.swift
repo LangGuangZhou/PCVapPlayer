@@ -14,11 +14,6 @@ var kHWDSystemVersion: Double {
     return UIDevice.systemVersionNum
 }
 
-/// iOS 9 及以后版本
-var kHWDiOS9Later: Bool {
-    return kHWDSystemVersion >= 9.0
-}
-
 /// 获取默认 Metal 资源选项
 func getDefaultMTLResourceOption() -> MTLResourceOptions {
     return .storageModeShared

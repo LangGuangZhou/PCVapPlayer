@@ -297,82 +297,24 @@ class PCMP4FrameHWDecoder: PCBaseDecoder {
         }
         
         // 使用 VTDecompressionSessionDecodeFrame
-        if #available(iOS 9.0, *) {
-            var flagOut: VTDecodeInfoFlags = []
-            let flags: VTDecodeFrameFlags = []
-            
-            PCVAPInfo(kPCVAPModuleCommon, "_decodeFrame(\(frameIndex)): calling VTDecompressionSessionDecodeFrame")
-            status = VTDecompressionSessionDecodeFrame(
-                decodeSession,
-                sampleBuffer: sampleBuffer,
-                flags: flags,
-                infoFlagsOut: &flagOut
-            ) { [weak self] status, infoFlags, imageBuffer, presentationTimeStamp, presentationDuration in
-                guard let self = self else { 
-                    PCVAPError(kPCVAPModuleCommon, "VTDecompressionSessionDecodeFrame callback: self is nil for frame \(frameIndex)")
-                    return 
-                }
-                
-                PCVAPInfo(kPCVAPModuleCommon, "VTDecompressionSessionDecodeFrame callback: frame=\(frameIndex), status=\(status), hasPixelBuffer=\(imageBuffer != nil)")
-                self.handleDecodePixelBuffer(
-                    pixelBuffer: imageBuffer,
-                    sampleBuffer: sampleBuffer,
-                    frameIndex: frameIndex,
-                    currentPts: currentPts,
-                    startDate: startDate,
-                    status: status,
-                    needDrop: drop
-                )
+        var flagOut: VTDecodeInfoFlags = []
+        let flags: VTDecodeFrameFlags = []
+        
+        PCVAPInfo(kPCVAPModuleCommon, "_decodeFrame(\(frameIndex)): calling VTDecompressionSessionDecodeFrame")
+        status = VTDecompressionSessionDecodeFrame(
+            decodeSession,
+            sampleBuffer: sampleBuffer,
+            flags: flags,
+            infoFlagsOut: &flagOut
+        ) { [weak self] status, infoFlags, imageBuffer, presentationTimeStamp, presentationDuration in
+            guard let self = self else { 
+                PCVAPError(kPCVAPModuleCommon, "VTDecompressionSessionDecodeFrame callback: self is nil for frame \(frameIndex)")
+                return 
             }
             
-            if status != noErr {
-                PCVAPError(kPCVAPModuleCommon, "_decodeFrame(\(frameIndex)): VTDecompressionSessionDecodeFrame returned error status=\(status)")
-            } else {
-                PCVAPInfo(kPCVAPModuleCommon, "_decodeFrame(\(frameIndex)): VTDecompressionSessionDecodeFrame called successfully")
-            }
-            
-            if status == kVTInvalidSessionErr {
-                // 防止陷入死循环
-                if invalidRetryCount >= 3 {
-                    return
-                }
-                
-                resetDecoder()
-                // 从最近I帧一直解码到当前帧，中间帧丢弃
-                findKeyFrameAndDecodeToCurrent(frameIndex)
-            } else {
-                invalidRetryCount = 0
-            }
-        } else {
-            // iOS 9.0 以下使用旧的回调方式
-            var outputPixelBuffer: CVPixelBuffer?
-            var flagOut: VTDecodeInfoFlags = []
-            let flags: VTDecodeFrameFlags = []
-            
-            status = VTDecompressionSessionDecodeFrame(
-                decodeSession,
-                sampleBuffer: sampleBuffer,
-                flags: flags,
-                frameRefcon: &outputPixelBuffer,
-                infoFlagsOut: &flagOut
-            )
-            
-            if status == kVTInvalidSessionErr {
-                // 防止陷入死循环
-                if invalidRetryCount >= 3 {
-                    return
-                }
-                
-                resetDecoder()
-                // 从最近I帧一直解码到当前帧，中间帧丢弃
-                findKeyFrameAndDecodeToCurrent(frameIndex)
-                return
-            } else {
-                invalidRetryCount = 0
-            }
-            
-            handleDecodePixelBuffer(
-                pixelBuffer: outputPixelBuffer,
+            PCVAPInfo(kPCVAPModuleCommon, "VTDecompressionSessionDecodeFrame callback: frame=\(frameIndex), status=\(status), hasPixelBuffer=\(imageBuffer != nil)")
+            self.handleDecodePixelBuffer(
+                pixelBuffer: imageBuffer,
                 sampleBuffer: sampleBuffer,
                 frameIndex: frameIndex,
                 currentPts: currentPts,
@@ -380,6 +322,25 @@ class PCMP4FrameHWDecoder: PCBaseDecoder {
                 status: status,
                 needDrop: drop
             )
+        }
+        
+        if status != noErr {
+            PCVAPError(kPCVAPModuleCommon, "_decodeFrame(\(frameIndex)): VTDecompressionSessionDecodeFrame returned error status=\(status)")
+        } else {
+            PCVAPInfo(kPCVAPModuleCommon, "_decodeFrame(\(frameIndex)): VTDecompressionSessionDecodeFrame called successfully")
+        }
+        
+        if status == kVTInvalidSessionErr {
+            // 防止陷入死循环
+            if invalidRetryCount >= 3 {
+                return
+            }
+            
+            resetDecoder()
+            // 从最近I帧一直解码到当前帧，中间帧丢弃
+            findKeyFrameAndDecodeToCurrent(frameIndex)
+        } else {
+            invalidRetryCount = 0
         }
     }
     
@@ -530,67 +491,62 @@ class PCMP4FrameHWDecoder: PCBaseDecoder {
             
             PCVAPEvent(kPCVAPModuleCommon, "CMVideoFormatDescription. Creation: successfully.")
         } else if mp4Parser.videoCodecID == .h265 {
-            if #available(iOS 11.0, *) {
-                guard VTIsHardwareDecodeSupported(kCMVideoCodecType_HEVC) else {
-                    PCVAPEvent(kPCVAPModuleCommon, "H.265 decoding is un-supported because of the hardware")
-                    return false
-                }
-                
-                guard let vpsData = vpsData else {
-                    PCVAPError(kPCVAPModuleCommon, "initPPSnSPS failed: vpsData is nil for H.265")
-                    return false
-                }
-                
-                // 修复：withUnsafeBytes闭包内的指针只在闭包内有效
-                // 解决方案：将数据复制到固定内存位置，确保指针在整个函数执行期间有效
-                let vpsBytes = [UInt8](vpsData)
-                let spsBytes = [UInt8](spsData)
-                let ppsBytes = [UInt8](ppsData)
-                
-                var resultStatus: OSStatus = noErr
-                var resultFormatDescription: CMFormatDescription?
-                
-                vpsBytes.withUnsafeBufferPointer { vpsBuffer in
-                    spsBytes.withUnsafeBufferPointer { spsBuffer in
-                        ppsBytes.withUnsafeBufferPointer { ppsBuffer in
-                            guard let vpsPointer = vpsBuffer.baseAddress,
-                                  let spsPointer = spsBuffer.baseAddress,
-                                  let ppsPointer = ppsBuffer.baseAddress else {
-                                resultStatus = OSStatus(-1)
-                                return
-                            }
-                            
-                            let parameterSetPointers = [vpsPointer, spsPointer, ppsPointer]
-                            let parameterSetSizes = [vpsBytes.count, spsBytes.count, ppsBytes.count]
-                            
-                            resultStatus = CMVideoFormatDescriptionCreateFromHEVCParameterSets(
-                                allocator: kCFAllocatorDefault,
-                                parameterSetCount: 3,
-                                parameterSetPointers: parameterSetPointers,
-                                parameterSetSizes: parameterSetSizes,
-                                nalUnitHeaderLength: 4,
-                                extensions: nil,
-                                formatDescriptionOut: &resultFormatDescription
-                            )
-                        }
-                    }
-                }
-                
-                status = resultStatus
-                mFormatDescription = resultFormatDescription
-                
-                if status != noErr {
-                    PCVAPEvent(kPCVAPModuleCommon, "CMVideoFormatDescription. Creation: failed. status=\(status), vpsSize=\(vpsBytes.count), spsSize=\(spsBytes.count), ppsSize=\(ppsBytes.count)")
-                    PCVAPError(kPCVAPModuleCommon, "CMVideoFormatDescription creation failed with status: \(status)")
-                    constructErr = NSError(domain: PCMP4HWDErrorDomain, code: PCMP4HWDErrorCode.errorCreateVTBDesc.rawValue, userInfo: errorUserInfo())
-                    return false
-                }
-                
-                PCVAPEvent(kPCVAPModuleCommon, "CMVideoFormatDescription. Creation: successfully.")
-            } else {
-                PCVAPEvent(kPCVAPModuleCommon, "System version is too low to support H.265 decoding")
+            guard VTIsHardwareDecodeSupported(kCMVideoCodecType_HEVC) else {
+                PCVAPEvent(kPCVAPModuleCommon, "H.265 decoding is un-supported because of the hardware")
                 return false
             }
+            
+            guard let vpsData = vpsData else {
+                PCVAPError(kPCVAPModuleCommon, "initPPSnSPS failed: vpsData is nil for H.265")
+                return false
+            }
+            
+            // 修复：withUnsafeBytes闭包内的指针只在闭包内有效
+            // 解决方案：将数据复制到固定内存位置，确保指针在整个函数执行期间有效
+            let vpsBytes = [UInt8](vpsData)
+            let spsBytes = [UInt8](spsData)
+            let ppsBytes = [UInt8](ppsData)
+            
+            var resultStatus: OSStatus = noErr
+            var resultFormatDescription: CMFormatDescription?
+            
+            vpsBytes.withUnsafeBufferPointer { vpsBuffer in
+                spsBytes.withUnsafeBufferPointer { spsBuffer in
+                    ppsBytes.withUnsafeBufferPointer { ppsBuffer in
+                        guard let vpsPointer = vpsBuffer.baseAddress,
+                              let spsPointer = spsBuffer.baseAddress,
+                              let ppsPointer = ppsBuffer.baseAddress else {
+                            resultStatus = OSStatus(-1)
+                            return
+                        }
+                        
+                        let parameterSetPointers = [vpsPointer, spsPointer, ppsPointer]
+                        let parameterSetSizes = [vpsBytes.count, spsBytes.count, ppsBytes.count]
+                        
+                        resultStatus = CMVideoFormatDescriptionCreateFromHEVCParameterSets(
+                            allocator: kCFAllocatorDefault,
+                            parameterSetCount: 3,
+                            parameterSetPointers: parameterSetPointers,
+                            parameterSetSizes: parameterSetSizes,
+                            nalUnitHeaderLength: 4,
+                            extensions: nil,
+                            formatDescriptionOut: &resultFormatDescription
+                        )
+                    }
+                }
+            }
+            
+            status = resultStatus
+            mFormatDescription = resultFormatDescription
+            
+            if status != noErr {
+                PCVAPEvent(kPCVAPModuleCommon, "CMVideoFormatDescription. Creation: failed. status=\(status), vpsSize=\(vpsBytes.count), spsSize=\(spsBytes.count), ppsSize=\(ppsBytes.count)")
+                PCVAPError(kPCVAPModuleCommon, "CMVideoFormatDescription creation failed with status: \(status)")
+                constructErr = NSError(domain: PCMP4HWDErrorDomain, code: PCMP4HWDErrorCode.errorCreateVTBDesc.rawValue, userInfo: errorUserInfo())
+                return false
+            }
+            
+            PCVAPEvent(kPCVAPModuleCommon, "CMVideoFormatDescription. Creation: successfully.")
         }
         
         // 创建 VTDecompressionSession
@@ -608,40 +564,18 @@ class PCMP4FrameHWDecoder: PCBaseDecoder {
         
         let pixelBufferAttributes = attrs as CFDictionary
         
-        if #available(iOS 9.0, *) {
-            status = VTDecompressionSessionCreate(
-                allocator: kCFAllocatorDefault,
-                formatDescription: formatDescription,
-                decoderSpecification: nil,
-                imageBufferAttributes: pixelBufferAttributes,
-                outputCallback: nil,
-                decompressionSessionOut: &mDecodeSession
-            )
-            
-            if status != noErr {
-                constructErr = NSError(domain: PCMP4HWDErrorDomain, code: PCMP4HWDErrorCode.errorCreateVTBSession.rawValue, userInfo: errorUserInfo())
-                return false
-            }
-        } else {
-            // iOS 9.0 以下使用回调方式
-            var callBackRecord = VTDecompressionOutputCallbackRecord(
-                decompressionOutputCallback: didDecompress,
-                decompressionOutputRefCon: nil
-            )
-            
-            status = VTDecompressionSessionCreate(
-                allocator: kCFAllocatorDefault,
-                formatDescription: formatDescription,
-                decoderSpecification: nil,
-                imageBufferAttributes: pixelBufferAttributes,
-                outputCallback: &callBackRecord,
-                decompressionSessionOut: &mDecodeSession
-            )
-            
-            if status != noErr {
-                constructErr = NSError(domain: PCMP4HWDErrorDomain, code: PCMP4HWDErrorCode.errorCreateVTBSession.rawValue, userInfo: errorUserInfo())
-                return false
-            }
+        status = VTDecompressionSessionCreate(
+            allocator: kCFAllocatorDefault,
+            formatDescription: formatDescription,
+            decoderSpecification: nil,
+            imageBufferAttributes: pixelBufferAttributes,
+            outputCallback: nil,
+            decompressionSessionOut: &mDecodeSession
+        )
+        
+        if status != noErr {
+            constructErr = NSError(domain: PCMP4HWDErrorDomain, code: PCMP4HWDErrorCode.errorCreateVTBSession.rawValue, userInfo: errorUserInfo())
+            return false
         }
         
         return true
@@ -763,24 +697,6 @@ class PCMP4FrameHWDecoder: PCBaseDecoder {
     private func errorUserInfo() -> [String: Any] {
         return ["location": fileInfo.filePath ?? ""]
     }
-}
-
-// MARK: - Decode Callback (iOS 9.0 以下)
-
-private func didDecompress(
-    decompressionOutputRefCon: UnsafeMutableRawPointer?,
-    sourceFrameRefCon: UnsafeMutableRawPointer?,
-    status: OSStatus,
-    infoFlags: VTDecodeInfoFlags,
-    imageBuffer: CVImageBuffer?,
-    presentationTimeStamp: CMTime,
-    presentationDuration: CMTime
-) {
-    // iOS 9.0 以下使用此回调
-    // 在 iOS 9.0+ 中，我们使用 outputHandler
-    // Swift 中 CVPixelBuffer 会自动管理内存，不需要手动 retain
-    _ = sourceFrameRefCon
-    _ = imageBuffer
 }
 
 // MARK: - UIDevice Extension

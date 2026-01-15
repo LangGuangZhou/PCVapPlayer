@@ -71,27 +71,23 @@ class PCTextureLoader {
             return nil
         }
         
-        if #available(iOS 10.0, *) {
-            let loader = MTKTextureLoader(device: device)
-            let options: [MTKTextureLoader.Option: Any] = [
-                .origin: MTKTextureLoader.Origin.flippedVertically,
-                .SRGB: false
-            ]
-            
-            do {
-                guard let cgImage = image.cgImage else {
-                    PCVAPError(kPCVAPModuleCommon, "attemp to loadTexture with nil cgImage")
-                    return nil
-                }
-                let texture = try loader.newTexture(cgImage: cgImage, options: options)
-                return texture
-            } catch {
-                PCVAPError(kPCVAPModuleCommon, "loadTexture error:\(error)")
+        let loader = MTKTextureLoader(device: device)
+        let options: [MTKTextureLoader.Option: Any] = [
+            .origin: MTKTextureLoader.Origin.flippedVertically,
+            .SRGB: false
+        ]
+        
+        do {
+            guard let cgImage = image.cgImage else {
+                PCVAPError(kPCVAPModuleCommon, "attemp to loadTexture with nil cgImage")
                 return nil
             }
+            let texture = try loader.newTexture(cgImage: cgImage, options: options)
+            return texture
+        } catch {
+            PCVAPError(kPCVAPModuleCommon, "loadTexture error:\(error)")
+            return nil
         }
-        
-        return cg_loadTexture(with: image, device: device)
     }
     
     /// 从数据加载纹理
@@ -174,63 +170,6 @@ class PCTextureLoader {
         }
         
         return image
-    }
-    
-    /// 使用 Core Graphics 加载纹理（iOS 9 兼容）
-    private static func cg_loadTexture(with image: UIImage, device: MTLDevice) -> MTLTexture? {
-        guard let imageRef = image.cgImage, device != nil else {
-            PCVAPError(kPCVAPModuleCommon, "load texture fail, cuz device/image is nil")
-            return nil
-        }
-        
-        let width = CGFloat(imageRef.width)
-        let height = CGFloat(imageRef.height)
-        let bytesPerPixel = 4
-        let bytesPerRow = bytesPerPixel * Int(width)
-        let bitsPerComponent = 8
-        
-        let colorSpace = CGColorSpaceCreateDeviceRGB()
-        
-        let dataSize = Int(height) * Int(width) * bytesPerPixel
-        guard let rawData = calloc(dataSize, MemoryLayout<UInt8>.size) else {
-            PCVAPError(kPCVAPModuleCommon, "load texture fail, cuz alloc mem fail! width:\(width) height:\(height) bytesPerPixel:\(bytesPerPixel)")
-            return nil
-        }
-        defer { free(rawData) }
-        
-        guard let context = CGContext(
-            data: rawData,
-            width: Int(width),
-            height: Int(height),
-            bitsPerComponent: bitsPerComponent,
-            bytesPerRow: bytesPerRow,
-            space: colorSpace,
-            bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue).rawValue
-        ) else {
-            PCVAPError(kPCVAPModuleCommon, "CGBitmapContextCreate error width:\(width) height:\(height) bitsPerComponent:\(bitsPerComponent) bytesPerRow:\(bytesPerRow)")
-            return nil
-        }
-        
-        context.translateBy(x: 0, y: height)
-        context.scaleBy(x: 1, y: -1)
-        context.draw(imageRef, in: CGRect(x: 0, y: 0, width: width, height: height))
-        
-        let textureDescriptor = MTLTextureDescriptor.texture2DDescriptor(
-            pixelFormat: .rgba8Unorm,
-            width: Int(width),
-            height: Int(height),
-            mipmapped: false
-        )
-        
-        guard let texture = device.makeTexture(descriptor: textureDescriptor) else {
-            PCVAPError(kPCVAPModuleCommon, "load texture fail, cuz fail getting texture")
-            return nil
-        }
-        
-        let region = MTLRegionMake3D(0, 0, 0, Int(width), Int(height), 1)
-        texture.replace(region: region, mipmapLevel: 0, withBytes: rawData, bytesPerRow: bytesPerRow)
-        
-        return texture
     }
     
     /// 根据指定的字符内容和容器大小计算合适的字体
