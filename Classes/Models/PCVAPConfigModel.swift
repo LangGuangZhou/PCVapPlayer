@@ -21,10 +21,10 @@ public enum VAPOrientation: Int {
 
 // MARK: - Type Aliases
 
-typealias AttachmentSourceType = String      // 资源类型
-typealias AttachmentSourceLoadType = String  // 资源加载类型
-typealias AttachmentSourceStyle = String     // 字体
-typealias AttachmentFitType = String         // 资源适配类型
+public typealias AttachmentSourceType = String      // 资源类型
+public typealias AttachmentSourceLoadType = String  // 资源加载类型
+public typealias AttachmentSourceStyle = String     // 字体
+public typealias AttachmentFitType = String         // 资源适配类型
 
 // MARK: - Constants
 

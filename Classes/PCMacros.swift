@@ -36,7 +36,7 @@ public enum PCTextureBlendMode: Int {
 public typealias PCVAPImageCompletionBlock = (UIImage?, Error?, String?) -> Void
 
 /// 手势事件回调
-typealias PCVAPGestureEventBlock = (UIGestureRecognizer, Bool, PCVAPSourceDisplayItem?) -> Void
+public typealias PCVAPGestureEventBlock = (UIGestureRecognizer, Bool, PCVAPSourceDisplayItem?) -> Void
 
 // MARK: - Metal Device
 
