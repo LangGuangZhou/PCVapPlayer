@@ -23,7 +23,7 @@ public typealias PCVAPView = UIView  // 特效播放容器
 // MARK: - Enums
 
 /// MP4 素材中每一帧 alpha 通道数据的位置
-enum PCTextureBlendMode: Int {
+public enum PCTextureBlendMode: Int {
     case alphaLeft = 0      // 左侧 alpha
     case alphaRight = 1     // 右侧 alpha
     case alphaTop = 2       // 上侧 alpha
@@ -46,7 +46,7 @@ var kPCHWDMetalRendererDevice: MTLDevice? = nil
 // MARK: - Background Operation Type
 
 /// 退后台时的行为
-enum PCHWDMP4EBOperationType: UInt {
+public enum PCHWDMP4EBOperationType: UInt {
     case stop = 0                    // 退后台时结束 VAP 播放
     case pauseAndResume = 1          // 退后台时暂停、回到前台时自动恢复
     case doNothing = 2               // VAP 自身不进行控制，当外部进行控制时可以使用这个

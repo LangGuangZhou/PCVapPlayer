@@ -8,7 +8,7 @@
 
 import UIKit
 
-extension UIColor {
+public extension UIColor {
     /// 从十六进制字符串创建颜色
     /// - Parameter hexString: 十六进制字符串，格式如 "#RRGGBB" 或 "#RRGGBBAA"
     convenience init?(hexString: String) {

@@ -1,17 +1,15 @@
 Pod::Spec.new do |s|
   s.name             = 'PCVapPlayer'
-  s.version          = '1.0.0'
+  s.version          = '1.0.1'
   s.summary          = 'PCVapPlayer is a high-performance video animation player library for iOS, written in Swift.'
   s.description      = <<-DESC
 PCVapPlayer is a Swift-based video animation player library that supports hardware-accelerated video playback with alpha channel support. It uses Metal for rendering and provides a modern Swift API.
                        DESC
 
-  s.homepage         = 'https://github.com/yourusername/PCVapPlayer'
+  s.homepage         = 'https://github.com/LangGuangZhou/PCVapPlayer'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
-  s.author           = { 'Your Name' => 'your-email@example.com' }
-  # 本地开发使用，发布到远程仓库时取消注释下面的行
-  # s.source           = { :git => 'https://github.com/yourusername/PCVapPlayer.git', :tag => s.version.to_s }
-  s.source           = { :path => '.' }
+  s.author           = { 'LangGuangZhou' => '' }
+  s.source           = { :git => 'https://github.com/LangGuangZhou/PCVapPlayer.git', :tag => s.version.to_s }
 
   s.ios.deployment_target = '15.0'
   s.swift_version = '5.0'

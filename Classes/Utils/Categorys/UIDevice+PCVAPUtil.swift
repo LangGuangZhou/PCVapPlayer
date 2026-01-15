@@ -23,7 +23,7 @@ var kDefaultMTLResourceOption: MTLResourceOptions {
     return getDefaultMTLResourceOption()
 }
 
-extension UIDevice {
+public extension UIDevice {
     /// 获取系统版本号（数字）
     static var systemVersionNum: Double {
         struct Static {
@@ -39,7 +39,7 @@ extension UIDevice {
     }
 }
 
-extension String {
+public extension String {
     var doubleValue: Double? {
         return Double(self)
     }

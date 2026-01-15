@@ -13,7 +13,7 @@ import Metal
 // MARK: - Enums
 
 /// VAP 方向
-enum VAPOrientation: Int {
+public enum VAPOrientation: Int {
     case none = 0          // 兼容
     case portrait = 1      // 竖屏
     case landscape = 2     // 横屏
@@ -45,24 +45,28 @@ let kQGAGAttachmentSourceStyleBoldText: AttachmentSourceStyle = "b"         // �
 
 /// VAP 配置模型
 public class PCVAPConfigModel {
-    var info: VAPCommonInfo?
-    var resources: [VAPSourceInfo] = []
-    var mergedConfig: [Int: [VAPMergedInfo]] = [:]  // 帧索引 -> 融合信息数组
+    public var info: VAPCommonInfo?
+    public var resources: [VAPSourceInfo] = []
+    public var mergedConfig: [Int: [VAPMergedInfo]] = [:]  // 帧索引 -> 融合信息数组
+    
+    public init() {}
 }
 
 // MARK: - VAPCommonInfo
 
 /// VAP 通用信息
-class VAPCommonInfo {
-    var version: Int = 0
-    var framesCount: Int = 0
-    var size: CGSize = .zero
-    var videoSize: CGSize = .zero
-    var targetOrientaion: VAPOrientation = .none
-    var fps: Int = 0
-    var isMerged: Bool = false
-    var alphaAreaRect: CGRect = .zero
-    var rgbAreaRect: CGRect = .zero
+public class VAPCommonInfo {
+    public var version: Int = 0
+    public var framesCount: Int = 0
+    public var size: CGSize = .zero
+    public var videoSize: CGSize = .zero
+    public var targetOrientaion: VAPOrientation = .none
+    public var fps: Int = 0
+    public var isMerged: Bool = false
+    public var alphaAreaRect: CGRect = .zero
+    public var rgbAreaRect: CGRect = .zero
+    
+    public init() {}
 }
 
 // MARK: - VAPSourceInfo
@@ -70,39 +74,45 @@ class VAPCommonInfo {
 /// VAP 资源信息
 public class VAPSourceInfo {
     // 原始信息
-    var type: AttachmentSourceType = ""
-    var loadType: AttachmentSourceLoadType = ""
-    var contentTag: String = ""
-    var contentTagValue: String = ""
-    var color: UIColor?
-    var style: AttachmentSourceStyle = ""
-    var size: CGSize = .zero
-    var fitType: AttachmentFitType = ""
+    public var type: AttachmentSourceType = ""
+    public var loadType: AttachmentSourceLoadType = ""
+    public var contentTag: String = ""
+    public var contentTagValue: String = ""
+    public var color: UIColor?
+    public var style: AttachmentSourceStyle = ""
+    public var size: CGSize = .zero
+    public var fitType: AttachmentFitType = ""
     
     // 加载内容
-    var sourceImage: UIImage?
-    var texture: MTLTexture?
-    var colorParamsBuffer: MTLBuffer?
+    public var sourceImage: UIImage?
+    public var texture: MTLTexture?
+    public var colorParamsBuffer: MTLBuffer?
+    
+    public init() {}
 }
 
 // MARK: - PCVAPSourceDisplayItem
 
 /// VAP 资源显示项
-class PCVAPSourceDisplayItem {
-    var frame: CGRect = .zero
-    var sourceInfo: VAPSourceInfo?
+public class PCVAPSourceDisplayItem {
+    public var frame: CGRect = .zero
+    public var sourceInfo: VAPSourceInfo?
+    
+    public init() {}
 }
 
 // MARK: - VAPMergedInfo
 
 /// VAP 融合信息
-class VAPMergedInfo {
-    var source: VAPSourceInfo?
-    var renderIndex: Int = 0
-    var renderRect: CGRect = .zero
-    var needMask: Bool = false
-    var maskRect: CGRect = .zero
-    var maskRotation: Int = 0
+public class VAPMergedInfo {
+    public var source: VAPSourceInfo?
+    public var renderIndex: Int = 0
+    public var renderRect: CGRect = .zero
+    public var needMask: Bool = false
+    public var maskRect: CGRect = .zero
+    public var maskRotation: Int = 0
+    
+    public init() {}
     
     /// 生成顶点缓冲区
     /// - Parameters:
@@ -110,7 +120,7 @@ class VAPMergedInfo {
     ///   - maskContainerSize: 遮罩容器大小
     ///   - device: Metal 设备
     /// - Returns: 顶点缓冲区
-    func vertexBuffer(containerSize size: CGSize, maskContainerSize mSize: CGSize, device: MTLDevice) -> MTLBuffer? {
+    public func vertexBuffer(containerSize size: CGSize, maskContainerSize mSize: CGSize, device: MTLDevice) -> MTLBuffer? {
         if size.width <= 0 || size.height <= 0 || mSize.width <= 0 || mSize.height <= 0 {
             PCVAPError(kPCVAPModuleCommon, "vertexBufferWithContainerSize size error! :\(size) - \(mSize)")
             assertionFailure("vertexBufferWithContainerSize size error!")

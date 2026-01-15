@@ -73,9 +73,9 @@ func VAPDebug(_ module: String, _ format: String, _ arguments: CVarArg...) {
 }
 
 /// 日志管理器
-class PCLogger {
+public class PCLogger {
     /// 注册外部日志函数
-    static func registerExternalLog(_ logger: @escaping PCLoggerFunc) {
+    public static func registerExternalLog(_ logger: @escaping PCLoggerFunc) {
         externalPCLogger = logger
     }
     

@@ -199,7 +199,7 @@ class PCMP4FrameHWDecoder: PCBaseDecoder {
         // 注册通知（如果需要）
     }
     
-    @objc private func hwd_didReceiveEnterBackgroundNotification(_ notification: Notification) {
+    private func hwd_didReceiveEnterBackgroundNotification(_ notification: Notification) {
         // 处理进入后台通知
     }
     

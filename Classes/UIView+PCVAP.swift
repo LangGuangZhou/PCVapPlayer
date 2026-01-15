@@ -57,7 +57,7 @@ extension PCHWDMP4PlayDelegate {
 
 // MARK: - UIView VAP Extension
 
-extension UIView {
+public extension UIView {
     // MARK: - Associated Object Keys
     
     private struct AssociatedKeys {
@@ -91,7 +91,7 @@ extension UIView {
     // MARK: - Properties
     
     /// 播放委托
-    var hwd_Delegate: PCHWDMP4PlayDelegate? {
+    public var hwd_Delegate: PCHWDMP4PlayDelegate? {
         get {
             if let proxy = objc_getAssociatedObject(self, &AssociatedKeys.hwdDelegate) as? PCWeakProxy {
                 return proxy.target as? PCHWDMP4PlayDelegate
@@ -109,12 +109,12 @@ extension UIView {
     }
     
     /// 当前帧
-    var hwd_currentFrame: PCMP4AnimatedImageFrame? {
+    public var hwd_currentFrame: PCMP4AnimatedImageFrame? {
         return hwd_currentFrameInstance
     }
     
     /// MP4 文件路径
-    var hwd_MP4FilePath: String? {
+    public var hwd_MP4FilePath: String? {
         get {
             return objc_getAssociatedObject(self, &AssociatedKeys.hwdMP4FilePath) as? String
         }
@@ -124,7 +124,7 @@ extension UIView {
     }
     
     /// FPS for display
-    var hwd_fps: Int {
+    public var hwd_fps: Int {
         get {
             if let value = objc_getAssociatedObject(self, &AssociatedKeys.hwdFps) as? NSNumber {
                 return value.intValue
@@ -137,7 +137,7 @@ extension UIView {
     }
     
     /// 是否使用 OpenGL 渲染（iOS 15+ 已废弃，默认使用 Metal）
-    var hwd_renderByOpenGL: Bool {
+    public var hwd_renderByOpenGL: Bool {
         get {
             if let value = objc_getAssociatedObject(self, &AssociatedKeys.hwdRenderByOpenGL) as? NSNumber {
                 return value.boolValue
@@ -150,7 +150,7 @@ extension UIView {
     }
     
     /// 在退后台时的行为，默认为结束
-    var hwd_enterBackgroundOP: PCHWDMP4EBOperationType {
+    public var hwd_enterBackgroundOP: PCHWDMP4EBOperationType {
         get {
             if let value = objc_getAssociatedObject(self, &AssociatedKeys.hwdEnterBackgroundOP) as? NSNumber,
                let type = PCHWDMP4EBOperationType(rawValue: value.uintValue) {
@@ -338,12 +338,12 @@ extension UIView {
     // MARK: - Public Methods
     
     /// 播放 MP4（播放一遍，alpha 数据在左边，不需要回调）
-    func playHWDMp4(_ filePath: String) {
+    public func playHWDMp4(_ filePath: String) {
         playHWDMP4(filePath, delegate: nil as PCHWDMP4PlayDelegate?)
     }
     
     /// 播放 MP4（播放一遍，alpha 数据在左边，设置回调）
-    func playHWDMP4(_ filePath: String, delegate: PCHWDMP4PlayDelegate?) {
+    public func playHWDMP4(_ filePath: String, delegate: PCHWDMP4PlayDelegate?) {
         p_playHWDMP4(filePath, fps: 0, blendMode: PCTextureBlendMode.alphaLeft, repeatCount: 0, delegate: delegate)
     }
     
@@ -353,19 +353,19 @@ extension UIView {
     }
     
     /// 停止播放
-    @objc public func stopHWDMP4() {
+    public func stopHWDMP4() {
         hwd_stopHWDMP4()
     }
     
     /// 暂停播放
-    @objc func pauseHWDMP4() {
+    public func pauseHWDMP4() {
         PCVAPInfo(kPCVAPModuleCommon, "pauseHWDMP4")
         hwd_onPause = true
         hwd_decodeManager?.tryToPauseAudioPlay()
     }
     
     /// 恢复播放
-    @objc func resumeHWDMP4() {
+    public func resumeHWDMP4() {
         PCVAPInfo(kPCVAPModuleCommon, "resumeHWDMP4")
         hwd_onPause = false
         
@@ -407,7 +407,7 @@ extension UIView {
     /// Seek 到指定帧
     /// - Parameter frameIndex: 目标帧索引（从 0 开始）
     /// - Note: 此方法会暂停当前播放，执行 seek 操作。seek 完成后，如果之前是播放状态，会自动恢复播放
-    @objc public func seekToFrame(_ frameIndex: Int) {
+    public func seekToFrame(_ frameIndex: Int) {
         guard frameIndex >= 0 else {
             PCVAPError(kPCVAPModuleCommon, "seekToFrame: invalid frame index \(frameIndex)")
             return
@@ -455,7 +455,7 @@ extension UIView {
     }
     
     /// 设置是否静音播放素材，注：在播放开始时进行设置，播放过程中设置无效，循环播放则设置后的下一次播放开始生效
-    @objc func setMute(_ isMute: Bool) {
+    public func setMute(_ isMute: Bool) {
         vap_isMute = isMute
     }
     
@@ -951,7 +951,7 @@ extension UIView: AudioPlaybackPositionDelegate {
 // MARK: - PCHWDMetelViewDelegate & PCVAPMetalViewDelegate
 
 extension UIView: PCHWDMetelViewDelegate, PCVAPMetalViewDelegate {
-    @objc func onMetalViewUnavailable() {
+    func onMetalViewUnavailable() {
         PCVAPError(kPCVAPModuleCommon, "onMetalViewUnavailable")
         stopHWDMP4()
     }
@@ -1019,7 +1019,7 @@ extension UIView {
     ///   - gestureRecognizer: 需要的手势识别器
     ///   - handler: 手势识别事件回调，按照 gestureRecognizer 回调时机回调
     /// - Note: 例：`mp4View.addVapGesture(UILongPressGestureRecognizer()) { gestureRecognizer, insideSource, source in print("long press") }`
-    func addVapGesture(_ gestureRecognizer: UIGestureRecognizer, callback handler: @escaping PCVAPGestureEventBlock) {
+    public func addVapGesture(_ gestureRecognizer: UIGestureRecognizer, callback handler: @escaping PCVAPGestureEventBlock) {
         guard gestureRecognizer != nil else {
             PCVAPEvent(kPCVAPModuleCommon, "addVapTapGesture with empty gestureRecognizer!")
             return
@@ -1048,7 +1048,7 @@ extension UIView {
     
     /// 增加点击的手势识别
     /// - Parameter handler: 点击事件回调
-    func addVapTapGesture(_ handler: @escaping PCVAPGestureEventBlock) {
+    public func addVapTapGesture(_ handler: @escaping PCVAPGestureEventBlock) {
         // 如果是 PCVAPWrapView，转发给内部的 vapView
         if let wrapView = self as? PCVAPWrapView {
             wrapView.initPCVAPViewIfNeed()
@@ -1063,7 +1063,7 @@ extension UIView {
     /// 获取当前视图中 point 位置最近的一个 source，没有的话返回 nil
     /// - Parameter point: 当前 view 坐标系下的某一个位置
     /// - Returns: 显示项
-    func displayingSource(at point: CGPoint) -> PCVAPSourceDisplayItem? {
+    public func displayingSource(at point: CGPoint) -> PCVAPSourceDisplayItem? {
         guard let configManager = hwd_configManager,
               let model = configManager.model,
               let currentFrame = hwd_currentFrame else {
@@ -1119,13 +1119,13 @@ extension UIView {
 
 // MARK: - UIView VAPMask Extension
 
-extension UIView {
+public extension UIView {
     private struct VAPMaskAssociatedKeys {
         static var maskInfo = "PCVAPMaskInfo"
     }
     
     /// VAP 遮罩信息
-    var vap_maskInfo: PCVAPMaskInfo? {
+    public var vap_maskInfo: PCVAPMaskInfo? {
         get {
             return objc_getAssociatedObject(self, &VAPMaskAssociatedKeys.maskInfo) as? PCVAPMaskInfo
         }
