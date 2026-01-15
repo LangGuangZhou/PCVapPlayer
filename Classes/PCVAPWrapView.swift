@@ -215,7 +215,7 @@ extension PCVAPWrapView: PCHWDMP4PlayDelegate {
         delegate?.vapWrap_viewDidStartPlayMP4(container)
     }
     
-    public func viewDidPlayMP4AtFrame(_ frame: PCMP4AnimatedImageFrame, view: PCVAPView) {
+    @objc public func viewDidPlayMP4AtFrame(_ frame: PCMP4AnimatedImageFrame, view: PCVAPView) {
         delegate?.vapWrap_viewDidPlayMP4AtFrame(frame, view: view)
     }
     

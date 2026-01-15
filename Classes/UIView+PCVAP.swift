@@ -14,6 +14,8 @@ import CoreVideo
 
 /// MP4 播放委托协议
 /// 注意：回调方法会在子线程被执行
+/// 所有方法都是可选的，实现者可以根据需要选择性实现
+/// 如果不实现某个方法，将使用协议扩展中提供的默认实现
 public protocol PCHWDMP4PlayDelegate: AnyObject {
     /// 即将开始播放时询问，true 马上开始播放，false 放弃播放
     func shouldStartPlayMP4(_ container: PCVAPView, config: PCVAPConfigModel) -> Bool
@@ -44,15 +46,36 @@ public protocol PCHWDMP4PlayDelegate: AnyObject {
 
 // MARK: - Default Implementations
 
+/// 协议扩展提供所有方法的默认实现
+/// 这样实现者可以选择性地实现需要的方法，未实现的方法将使用默认行为
 extension PCHWDMP4PlayDelegate {
-    func shouldStartPlayMP4(_ container: PCVAPView, config: PCVAPConfigModel) -> Bool { return true }
-    func viewDidStartPlayMP4(_ container: PCVAPView) {}
-    func viewDidPlayMP4AtFrame(_ frame: PCMP4AnimatedImageFrame, view: PCVAPView) {}
-    func viewDidStopPlayMP4(_ lastFrameIndex: Int, view: PCVAPView) {}
-    func viewDidFinishPlayMP4(_ totalFrameCount: Int, view: PCVAPView) {}
-    func viewDidFailPlayMP4(_ error: Error) {}
-    func contentForVapTag(_ tag: String, resource: VAPSourceInfo) -> String? { return nil }
-    func loadVapImage(withURL urlStr: String, context: [String: Any]?, completion: @escaping PCVAPImageCompletionBlock) {}
+    /// 默认实现：允许播放
+    public func shouldStartPlayMP4(_ container: PCVAPView, config: PCVAPConfigModel) -> Bool { 
+        return true 
+    }
+    
+    /// 默认实现：空实现
+    public func viewDidStartPlayMP4(_ container: PCVAPView) {}
+    
+    /// 默认实现：空实现
+    public func viewDidPlayMP4AtFrame(_ frame: PCMP4AnimatedImageFrame, view: PCVAPView) {}
+    
+    /// 默认实现：空实现
+    public func viewDidStopPlayMP4(_ lastFrameIndex: Int, view: PCVAPView) {}
+    
+    /// 默认实现：空实现
+    public func viewDidFinishPlayMP4(_ totalFrameCount: Int, view: PCVAPView) {}
+    
+    /// 默认实现：空实现
+    public func viewDidFailPlayMP4(_ error: Error) {}
+    
+    /// 默认实现：返回 nil（不处理占位符）
+    public func contentForVapTag(_ tag: String, resource: VAPSourceInfo) -> String? { 
+        return nil 
+    }
+    
+    /// 默认实现：空实现（不加载图片）
+    public func loadVapImage(withURL urlStr: String, context: [String: Any]?, completion: @escaping PCVAPImageCompletionBlock) {}
 }
 
 // MARK: - UIView VAP Extension
@@ -985,6 +1008,7 @@ extension UIView: VAPConfigDelegate {
         hwd_loadMetalDataIfNeed()
         
         if let delegate = hwd_Delegate {
+            // 直接调用，如果未实现会使用协议扩展的默认实现（返回 true）
             let shouldStart = delegate.shouldStartPlayMP4(self, config: config)
             if !shouldStart {
                 PCVAPEvent(kPCVAPModuleCommon, "shouldStartPlayMP4 return no!")
@@ -1000,14 +1024,8 @@ extension UIView: VAPConfigDelegate {
     }
     
     func vapLoadImage(withURL urlStr: String, context: [String: Any]?, completion: @escaping PCVAPImageCompletionBlock) {
-        if let delegate = hwd_Delegate {
-            delegate.loadVapImage(withURL: urlStr, context: context, completion: completion)
-        } else {
-            // 图片加载是可选的，如果delegate未实现，返回nil但不报错
-            // 这样不会阻止视频播放
-            PCVAPEvent(kPCVAPModuleCommon, "vapLoadImage: delegate not implemented for URL [\(urlStr)], skipping (optional resource)")
-            completion(nil, nil, urlStr)
-        }
+        // 直接调用，如果未实现会使用协议扩展的默认实现（空实现）
+        hwd_Delegate?.loadVapImage(withURL: urlStr, context: context, completion: completion)
     }
 }
 
